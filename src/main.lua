@@ -13,7 +13,7 @@ local inspect = require('lib/inspect')
 --|<illegal?>
 --|<dangerous?>
 
--- Creates a comma separated string of wiki links 
+-- Creates a comma separated string of wiki links
 -- based on the names in the argument list.
 local function wikifyNameList(list)
   if list == nil then return "" end
@@ -23,9 +23,9 @@ local function wikifyNameList(list)
   for k, v in pairs(list) do
     if k ~= 1 then
       str = str .. ", [[" .. v .. "]]"
-    end 
+    end
   end
-  
+
   return str
 end
 
@@ -37,15 +37,15 @@ local function extractFactories()
     if (production.factory:find(" ${size}")) then
       production.factory = production.factory:gsub(" ${size}", "")
     end
-    
-    -- Some factories have a ${good} template that needs to be filled. Luckily, 
+
+    -- Some factories have a ${good} template that needs to be filled. Luckily,
     -- almost all factories only produce one good.
-    -- TODO: The Ammunition Factory has two names (from two entries in the productions file): 
+    -- TODO: The Ammunition Factory has two names (from two entries in the productions file):
     --       Ammunition Factory and Ammunition Factory S. We need to reduce this to Ammunition Factory.
     if (production.factory:find("${good}")) then
       production.factory = production.factory:gsub("${good}", production.results[1].name)
     end
-    
+
     local value = {input=production.ingredients, output=production.results, waste=production.garbages}
     createAndInsert(factories, production.factory, {name=production.factory}, value)
   end
@@ -68,43 +68,51 @@ local function printGoodsList(factories)
         for k3, waste in pairs(v.waste) do
           createAndInsert(soldByFactory, waste.name, {}, f.name)
         end
-      end 
+      end
     end
   end
-  
-  local function sortAndClean(t) 
+
+  local function sortAndClean(t)
     for k, list in pairs(t) do
       table.sort(list, function(a, b) return a < b end)
       t[k] = removeDuplicates(list)
     end
   end
-  
+
   sortAndClean(boughtByFactory)
   sortAndClean(soldByFactory)
 
   --print(inspect(boughtByFactory))
   --print(inspect(soldByFactory))
-  
+  file = io.open("table.txt", "a")
+  i = 0
   for key, good in sortedPairs(goods) do
-    print("|-")
-    print("|" .. good.name)
-    print("|" .. good.size)
-    print("|" .. good.price)
-    print("|" .. wikifyNameList(soldByFactory[good.name]))
-    print("|" .. wikifyNameList(boughtByFactory[good.name]))
-    
+	if(i ~= 1) then
+		file:write("|-")
+		i = i+1
+	else
+		file:write("\n|-")
+	end
+
+    file:write("\n|" .. good.name)
+    file:write("\n|" .. good.size)
+    file:write("\n|" .. good.price)
+    file:write("\n|" .. wikifyNameList(soldByFactory[good.name]))
+    file:write("\n|" .. wikifyNameList(boughtByFactory[good.name]))
+
     if (good.illegal) then
-      print("|yes")
-    else 
-      print("|no")
+      file:write("\n|yes")
+    else
+      file:write("\n|no")
     end
-    
+
     if (good.dangerous) then
-      print("|yes")
-    else 
-      print("|no")
+      file:write("\n|yes")
+    else
+      file:write("\n|no")
     end
   end
+  file:close()
 end
 
 local function main()
